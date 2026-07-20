@@ -15,6 +15,15 @@ uso (podés desactivarlo).
 
 ## 1. Instalación
 
+**¿Tenés el archivo `QSLManager.exe`?** Doble clic y listo -- no hace
+falta instalar Python, ni `pip`, ni nada de lo que sigue en esta sección.
+El `.exe` ya trae adentro todo lo necesario (Python, las librerías,
+Tesseract). Andá directo a la sección **2. Primer arranque**.
+
+**¿Vas a correrlo desde el código fuente en vez del `.exe`?** (por
+ejemplo en Linux/Mac, o porque vas a modificar el código) -- ahí sí hace
+falta lo siguiente:
+
 1. **Python 3.10 o superior** — https://www.python.org/downloads/
    Al instalar, marca la casilla "Add Python to PATH".
 2. En una terminal (PowerShell), dentro de la carpeta del proyecto:
