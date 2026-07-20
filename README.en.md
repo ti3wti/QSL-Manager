@@ -15,6 +15,14 @@ downloads from eQSL.cc if you use that, and the optional usage-stats ping
 
 ## 1. Installation
 
+**Got the `QSLManager.exe` file?** Double-click it and you're done -- no
+need to install Python, `pip`, or anything else in this section. The
+`.exe` already bundles everything it needs (Python, the libraries,
+Tesseract). Skip ahead to **2. First launch**.
+
+**Running it from source instead of the `.exe`?** (for example on
+Linux/Mac, or because you're modifying the code) -- then you'll need:
+
 1. **Python 3.10 or newer** — https://www.python.org/downloads/
    When installing, check "Add Python to PATH".
 2. In a terminal (PowerShell), inside the project folder:
