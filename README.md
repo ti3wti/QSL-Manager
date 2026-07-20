@@ -1,5 +1,7 @@
 # QSL Manager
 
+🇪🇸 Español | [🇬🇧 English](README.en.md)
+
 App local (Windows) para organizar tarjetas QSL de radioaficionados:
 importa imágenes o PDFs, reconoce los datos automáticamente (indicativo,
 país, fecha, banda, modo, locator), y las muestra en galería, mapa y
