@@ -39,10 +39,24 @@ Se abre una ventana nativa con la app. Si PyWebview no puede abrir la
 ventana (por ejemplo en un servidor sin entorno gráfico), el programa
 imprime una URL (`http://127.0.0.1:8756`) para abrir en el navegador.
 
-**Tesseract ya viene incluido** en la carpeta `tesseract-bin/` -- no hace
-falta instalar nada más para el reconocimiento local. Si por algún motivo
-falta esa carpeta, o preferís usar tu propia instalación de Tesseract,
-podés indicar la ruta a mano en Configuración (ver sección 4).
+**⚠️ Sobre Tesseract si corrés desde el código fuente**: la app funciona
+sin instalar nada de reconocimiento local *solo si* existe la carpeta
+`tesseract-bin/` dentro del proyecto (viene incluida si te pasaron el
+código completo por fuera de GitHub). **Si clonaste el repo desde GitHub,
+esa carpeta NO está** -- se excluye a propósito porque son ~90 MB de
+binarios de terceros (ver `.gitignore`). En ese caso, para que el
+reconocimiento local funcione, tenés que instalar Tesseract vos mismo:
+
+1. Descargalo de https://github.com/UB-Mannheim/tesseract/wiki
+   (instalador para Windows, opciones por defecto)
+2. En la app, ⚙ Configuración → campo "Ruta tesseract" → pegá la ruta
+   completa a `tesseract.exe` (normalmente
+   `C:\Program Files\Tesseract-OCR\tesseract.exe`)
+
+Sin este paso, el reconocimiento local (Tesseract) va a fallar con
+"not in your PATH" hasta que configures la ruta. El reconocimiento por
+IA (Gemini, sección 4) no depende de esto -- funciona igual sin
+Tesseract instalado.
 
 ## 2. Primer arranque
 
@@ -186,6 +200,15 @@ El `.exe` (con Tesseract incluido) queda en `dist/QSLManager.exe`. Cada
 persona que lo reciba tiene su propia base de datos local e independiente
 -- no hay nada compartido entre instalaciones salvo que se arme
 explícitamente un modo servidor central más adelante.
+
+**Sobre `tesseract-bin/` y GitHub**: esa carpeta (~90 MB, decenas de
+archivos binarios) no va al repositorio -- está en `.gitignore` a
+propósito. Solo hace falta *localmente*, en tu PC, en el momento de
+compilar (PyInstaller la lee del disco). Si alguien clona el repo desde
+cero y quiere compilar su propio `.exe`, necesita conseguir Tesseract por
+su cuenta (instalador en https://github.com/UB-Mannheim/tesseract/wiki)
+y copiar esa carpeta ahí, o usar directamente su propia instalación
+apuntando la ruta en Configuración en vez de empaquetarla.
 
 ## Limitaciones conocidas
 
