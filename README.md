@@ -1,4 +1,4 @@
-# QSL Manager
+# QSL Manager - IA based QSL Recognizer
 
 [![Descargar QSL Manager](https://img.shields.io/badge/⬇️_Descargar-QSLManager.exe-brightgreen?style=for-the-badge)](https://github.com/ti3wti/QSL-Manager/releases/latest/download/QSLManager.exe)
 
