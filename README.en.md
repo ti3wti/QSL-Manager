@@ -38,10 +38,23 @@ A native window opens with the app. If PyWebview can't open the window
 (for example on a server with no graphical environment), the program
 prints a URL (`http://127.0.0.1:8756`) to open manually in a browser.
 
-**Tesseract is already bundled** in the `tesseract-bin/` folder -- nothing
-else to install for local recognition. If that folder is missing for some
-reason, or you'd rather use your own Tesseract install, you can point to
-it manually in Settings (see section 4).
+**⚠️ About Tesseract if running from source**: the app works with local
+recognition out of the box *only if* the `tesseract-bin/` folder exists
+inside the project (included if you got the full code outside of
+GitHub). **If you cloned the repo from GitHub, that folder is NOT
+there** -- it's excluded on purpose, since it's ~90 MB of third-party
+binaries (see `.gitignore`). In that case, for local recognition to
+work, you need to install Tesseract yourself:
+
+1. Download it from https://github.com/UB-Mannheim/tesseract/wiki
+   (Windows installer, default options)
+2. In the app, ⚙ Settings → "Tesseract path" field → paste the full
+   path to `tesseract.exe` (usually
+   `C:\Program Files\Tesseract-OCR\tesseract.exe`)
+
+Without this step, local recognition (Tesseract) will fail with "not in
+your PATH" until you set the path. AI recognition (Gemini, section 4)
+doesn't depend on this -- it works fine without Tesseract installed.
 
 ## 2. First launch
 
@@ -184,6 +197,15 @@ The `.exe` (with Tesseract included) ends up in `dist/QSLManager.exe`.
 Each person who receives it gets their own independent local database --
 nothing is shared between installations unless a central-server mode is
 explicitly built later.
+
+**About `tesseract-bin/` and GitHub**: that folder (~90 MB, dozens of
+binary files) doesn't go into the repository -- it's in `.gitignore` on
+purpose. It's only needed *locally*, on your PC, at build time
+(PyInstaller reads it from disk). If someone clones the repo from
+scratch and wants to build their own `.exe`, they need to get Tesseract
+on their own (installer at https://github.com/UB-Mannheim/tesseract/wiki)
+and copy that folder in, or just use their own install by pointing to it
+in Settings instead of bundling it.
 
 ## Known limitations
 
