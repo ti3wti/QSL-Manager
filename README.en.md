@@ -1,5 +1,7 @@
 # QSL Manager
 
+[![Download QSL Manager](https://img.shields.io/badge/⬇️_Download-QSLManager.exe-brightgreen?style=for-the-badge)](https://github.com/ti3wti/QSL-Manager/releases/latest/download/QSLManager.exe)
+
 [🇪🇸 Español](README.md) | 🇬🇧 English
 
 Local (Windows) app to organize ham radio QSL cards: import images or
