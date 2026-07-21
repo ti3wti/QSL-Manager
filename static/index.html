@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>QSL Manager - TI3WTI</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+</head>
+<body>
+  <div id="dropOverlay" data-i18n="app.drop_overlay">Suelta las QSLs aquí para importarlas</div>
+
+  <div id="onboardingModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="lang-selector">
+        <span data-i18n="onboarding.lang_label">Idioma / Language</span>
+        <button class="lang-flag" data-lang="es" onclick="setLanguage('es')"><svg class="flag-icon" viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="3" height="2" fill="#AA151B"/><rect width="3" height="1" y="0.5" fill="#F1BF00"/></svg> Español</button>
+        <button class="lang-flag" data-lang="en" onclick="setLanguage('en')"><svg class="flag-icon" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 60,30 M60,0 0,30" stroke="#C8102E" stroke-width="2"/><path d="M30,0 30,30 M0,15 60,15" stroke="#fff" stroke-width="10"/><path d="M30,0 30,30 M0,15 60,15" stroke="#C8102E" stroke-width="6"/></svg> English</button>
+      </div>
+      <h2 data-i18n="onboarding.title">👋 Bienvenido a QSL Manager</h2>
+      <p class="settings-help" data-i18n="onboarding.callsign_help">
+        Primero, ¿cuál es tu indicativo? Así la app sabe reconocer que las
+        tarjetas están dirigidas a vos (y no confundirlo con el remitente).
+        También aparece arriba en la pantalla, útil si compartís capturas.
+      </p>
+      <div class="field-row"><label data-i18n="onboarding.callsign_label">Mi indicativo</label><input id="onboard_callsign" placeholder="TI3WTI" style="text-transform:uppercase;"></div>
+      <p class="settings-help" data-i18n="onboarding.local_help">
+        Esta app funciona con un motor de reconocimiento local (Tesseract) --
+        no necesitas configurar más para empezar a importar tus QSLs.
+      </p>
+      <p class="settings-help" data-i18n-html="onboarding.ai_help_html">
+        <b>Opcional:</b> si quieres reconocimiento más preciso con tarjetas
+        con logos/fuentes decorativas, puedes activar IA (Google Gemini).
+        Es gratis y toma 3 pasos:
+      </p>
+      <ol class="onboarding-steps">
+        <li><span data-i18n="onboarding.step1">Abre Google AI Studio e inicia sesión con tu cuenta de Google</span>
+          &nbsp;<button type="button" class="btn-secondary" onclick="window.open('https://aistudio.google.com/apikey','_blank')" data-i18n="onboarding.step1_btn">Abrir ↗</button></li>
+        <li data-i18n="onboarding.step2">Clic en "Crear Clave de API" y luego clic en "Crear Clave"</li>
+        <li><span data-i18n="onboarding.step3">Pégala aquí:</span>
+          <input id="onboard_key" type="password" placeholder="AQ.Ab... o AIza..." style="margin-top:6px; width:100%;">
+        </li>
+      </ol>
+      <p class="settings-help" id="onboardStatus"></p>
+      <div class="modal-actions">
+        <button onclick="finishOnboarding(true)" data-i18n="onboarding.save_ai_btn">Guardar y activar IA</button>
+        <button class="btn-secondary" onclick="finishOnboarding(false)" data-i18n="onboarding.skip_btn">Omitir momentáneamente, usar solo reconocimiento local</button>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <h1>📻 QSL Manager <span id="ownerCallsignBanner" class="owner-banner" style="display:none;"></span></h1>
+    <div class="toolbar">
+      <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf,.bmp,.tiff,.webp" hidden>
+      <button id="importBtn" data-i18n="header.import_btn">+ Importar QSLs</button>
+      <select id="countryFilter"><option value="" data-i18n="header.all_countries">Todos los países</option></select>
+      <select id="modeFilter"><option value="" data-i18n="header.all_modes">Todos los modos</option></select>
+      <div class="search-wrap">
+        <input type="text" id="callsignSearch" data-i18n-ph="header.search_placeholder" placeholder="Buscar indicativo...">
+        <button id="clearSearch" class="clear-btn" data-i18n-title="header.clear_search_title" title="Limpiar búsqueda" style="display:none;">&times;</button>
+      </div>
+      <select id="sortOrder">
+        <option value="date_desc" data-i18n="header.sort_date_desc">Fecha: recientes primero</option>
+        <option value="date_asc" data-i18n="header.sort_date_asc">Fecha: antiguas primero</option>
+        <option value="country_asc" data-i18n="header.group_country">Agrupar por país (A-Z)</option>
+      </select>
+      <div class="view-toggle">
+        <button id="galleryTab" class="active" data-i18n="header.gallery_tab">Galería</button>
+        <button id="mapTab" data-i18n="header.map_tab">Mapa</button>
+        <button id="slideshowTab" data-i18n="header.slideshow_tab">Presentación</button>
+      </div>
+      <button id="importEqslBtn" data-i18n-title="header.eqsl_btn_title" title="Importar desde eQSL.cc">📥 <span data-i18n="header.eqsl_btn">eQSL</span></button>
+      <span id="eqslStatusPill" class="eqsl-pill" style="display:none;"></span>
+      <button id="bulkReprocessBtn" data-i18n-title="header.bulk_btn_title" title="Reintentar el reconocimiento de todas las tarjetas pendientes, con el motor configurado">🔁 <span data-i18n="header.bulk_btn">Revisar pendientes</span></button>
+      <span id="bulkStatusPill" class="eqsl-pill" style="display:none;"></span>
+      <button id="settingsBtn" data-i18n-title="header.settings_title" title="Configuración">⚙</button>
+      <button id="aboutBtn" data-i18n-title="header.about_title" title="Acerca de">ℹ️</button>
+      <a id="updatePill" class="eqsl-pill update-pill" style="display:none;" target="_blank"></a>
+    </div>
+    <div id="statsLine" class="stats-line"></div>
+  </header>
+
+  <div id="aboutModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="close-btn" id="closeAbout">&times;</button>
+      <h2 data-i18n="about.title">Acerca de QSL Manager</h2>
+      <p class="settings-help" data-i18n="about.desc">
+        App local para organizar tarjetas QSL de radioaficionados: OCR/IA,
+        mapa, importación desde eQSL.cc.
+      </p>
+      <p class="settings-help">
+        <span data-i18n="about.repo_label">📦 Última versión / código fuente:</span><br>
+        <a href="https://github.com/ti3wti/QSL-Manager" target="_blank">github.com/ti3wti/QSL-Manager</a>
+      </p>
+      <p class="settings-help">
+        <span data-i18n="about.tesseract_label">🔤 El reconocimiento local usa Tesseract OCR:</span><br>
+        <a href="https://github.com/UB-Mannheim/tesseract" target="_blank">github.com/UB-Mannheim/tesseract</a>
+      </p>
+      <p class="settings-help" id="versionLine"></p>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="checkForUpdates(true)" data-i18n="about.check_updates">🔄 Buscar actualizaciones</button>
+        <button class="btn-secondary" onclick="closeAboutModal()" data-i18n="about.close_btn">Cerrar</button>
+      </div>
+      <p class="settings-help" id="updateStatus"></p>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="close-btn" id="closeSettings">&times;</button>
+      <h2 data-i18n="settings.title">Configuración</h2>
+
+      <div class="lang-selector">
+        <span data-i18n="settings.lang_label">Idioma / Language</span>
+        <button class="lang-flag" data-lang="es" onclick="setLanguage('es')"><svg class="flag-icon" viewBox="0 0 3 2" xmlns="http://www.w3.org/2000/svg"><rect width="3" height="2" fill="#AA151B"/><rect width="3" height="1" y="0.5" fill="#F1BF00"/></svg> Español</button>
+        <button class="lang-flag" data-lang="en" onclick="setLanguage('en')"><svg class="flag-icon" viewBox="0 0 60 30" xmlns="http://www.w3.org/2000/svg"><rect width="60" height="30" fill="#012169"/><path d="M0,0 60,30 M60,0 0,30" stroke="#fff" stroke-width="6"/><path d="M0,0 60,30 M60,0 0,30" stroke="#C8102E" stroke-width="2"/><path d="M30,0 30,30 M0,15 60,15" stroke="#fff" stroke-width="10"/><path d="M30,0 30,30 M0,15 60,15" stroke="#C8102E" stroke-width="6"/></svg> English</button>
+      </div>
+
+      <div class="field-row"><label data-i18n="settings.callsign_label">Mi indicativo</label><input id="s_owner_callsign" placeholder="TI3WTI" style="text-transform:uppercase;"></div>
+      <div class="field-row"><label data-i18n="settings.theme_label">Tema</label>
+        <select id="s_theme">
+          <option value="system" data-i18n="settings.theme_system">Igual que el sistema</option>
+          <option value="light" data-i18n="settings.theme_light">Claro</option>
+          <option value="dark" data-i18n="settings.theme_dark">Oscuro</option>
+        </select>
+      </div>
+      <div class="field-row"><label data-i18n="settings.map_style_label">Estilo mapa</label>
+        <select id="s_map_style">
+          <option value="voyager" data-i18n="settings.map_voyager">Voyager (colores, nombres en español/inglés)</option>
+          <option value="positron" data-i18n="settings.map_positron">Positron (claro, minimalista)</option>
+          <option value="dark" data-i18n="settings.map_dark">Dark Matter (oscuro)</option>
+          <option value="osm" data-i18n="settings.map_osm">OpenStreetMap clásico (nombres en idioma local)</option>
+        </select>
+      </div>
+      <hr>
+
+      <p class="settings-help" data-i18n-html="settings.gemini_help_html">
+        Para que el reconocimiento entienda tarjetas con logos/fuentes decorativas
+        (mucho más confiable que Tesseract), usa Google Gemini -- capa
+        gratuita, sin tarjeta de crédito. Consigue tu API key en
+        <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a>
+        y pégala aquí.
+      </p>
+      <div class="field-row"><label data-i18n="settings.api_key_label">API key</label><input id="s_gemini_key" type="password" placeholder="AQ.Ab... o AIza..."></div>
+      <div class="field-row">
+        <label data-i18n="settings.model_label">Modelo</label>
+        <select id="s_gemini_model">
+          <option value="gemini-flash-lite-latest" data-i18n="settings.model_default_option">gemini-flash-lite-latest (recomendado, siempre vigente)</option>
+        </select>
+        <button type="button" onclick="detectModels()" data-i18n-title="settings.detect_title" title="Preguntarle a Google cuáles modelos están disponibles ahora mismo" data-i18n="settings.detect_btn">Detectar</button>
+      </div>
+      <p class="settings-help" id="modelDetectStatus"></p>
+      <p class="settings-help"><a href="#" onclick="reopenOnboarding(); return false;" data-i18n="settings.reopen_onboarding">Ver de nuevo el asistente de bienvenida</a></p>
+      <div class="field-row">
+        <label data-i18n="settings.engine_label">Motor al importar</label>
+        <select id="s_engine">
+          <option value="auto" data-i18n="settings.engine_auto">Automático (IA si hay key, si no Tesseract)</option>
+          <option value="ai" data-i18n="settings.engine_ai">Solo IA (Gemini)</option>
+          <option value="tesseract" data-i18n="settings.engine_tesseract">Solo Tesseract (local, sin internet)</option>
+        </select>
+      </div>
+      <p class="settings-help" data-i18n-html="settings.tesseract_help_html">
+        Si Tesseract falla con "not in your PATH", pega aquí la ruta
+        completa de <code>tesseract.exe</code> (normalmente
+        <code>C:\Program Files\Tesseract-OCR\tesseract.exe</code> --
+        ábrelo en el Explorador de Windows y copia la ruta de la barra
+        de direcciones + <code>\tesseract.exe</code>).
+      </p>
+      <div class="field-row"><label data-i18n="settings.tesseract_path_label">Ruta tesseract</label><input id="s_tesseract_path" placeholder="C:\Program Files\Tesseract-OCR\tesseract.exe"></div>
+      <hr>
+      <p class="settings-help" data-i18n-html="settings.telemetry_help_html">
+        <b>Estadísticas de uso:</b> Es opcional, pero ayuda al desarrollador
+        a decidir qué mejoras implementar. Solo tu indicativo se comparte,
+        nada más (ni tus QSL ni ningún otro dato), podés desactivarlo
+        cuando quieras.
+      </p>
+      <div class="field-row">
+        <label class="checkbox-inline"><input type="checkbox" id="s_telemetry_opt_in" style="width:auto;" checked> <span data-i18n="settings.telemetry_checkbox">Colaborar con estadísticas de uso</span></label>
+      </div>
+      <div class="modal-actions">
+        <button onclick="saveSettings()" data-i18n="settings.save_btn">Guardar</button>
+        <button class="btn-secondary" onclick="closeSettingsModal()" data-i18n="settings.close_btn">Cerrar</button>
+      </div>
+      <div id="settingsStatus" class="ocr-status"></div>
+    </div>
+  </div>
+
+  <main>
+    <div id="importStatus"></div>
+    <section id="galleryView"></section>
+    <section id="mapView" style="display:none;">
+      <div class="map-quick-style">
+        <select id="mapStyleQuick">
+          <option value="voyager" data-i18n="map.voyager">Voyager</option>
+          <option value="positron" data-i18n="map.positron">Positron (claro)</option>
+          <option value="dark" data-i18n="map.dark">Dark Matter (oscuro)</option>
+          <option value="osm" data-i18n="map.osm">OSM clásico</option>
+        </select>
+      </div>
+      <div id="map"></div>
+    </section>
+    <section id="slideshowView" style="display:none;">
+      <div class="slideshow-stage">
+        <div id="slideImgWrap" class="slideshow-img-wrap">
+          <img id="slideImg" class="slideshow-img">
+        </div>
+        <div id="slideCaption" class="slideshow-caption"></div>
+      </div>
+      <div class="slideshow-controls">
+        <button id="slidePrevBtn" data-i18n-title="slideshow.prev" title="Anterior">⏮</button>
+        <button id="slidePlayBtn" data-i18n-title="slideshow.play" title="Reproducir">▶</button>
+        <button id="slideNextBtn" data-i18n-title="slideshow.next" title="Siguiente">⏭</button>
+        <span id="slideCounter" class="slideshow-counter"></span>
+        <label class="slideshow-interval">
+          <span data-i18n="slideshow.seconds_label">Segundos entre QSL</span>
+          <input type="number" id="slideInterval" value="4" min="1" max="60">
+        </label>
+      </div>
+    </section>
+  </main>
+
+  <div id="eqslModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="close-btn" id="closeEqsl">&times;</button>
+      <h2 data-i18n="eqsl.title">Importar desde eQSL.cc</h2>
+      <p class="settings-help" data-i18n="eqsl.help">
+        Baja las tarjetas de tu bandeja de entrada de eQSL.cc directamente.
+        Tus datos vienen ya confirmados (indicativo, fecha, banda, modo),
+        así que estas tarjetas quedan marcadas como verificadas sin
+        necesidad de reconocimiento. eQSL no permite descargas rápidas -- esto baja
+        una tarjeta cada ~2 segundos, así que un inbox grande puede
+        tardar varios minutos; puedes cerrar esta ventana y seguir usando
+        la app mientras tanto, el progreso sigue en segundo plano.
+      </p>
+      <div class="field-row"><label data-i18n="eqsl.callsign_label">Indicativo</label><input id="eqsl_user" placeholder="TI3WTI"></div>
+      <div class="field-row"><label data-i18n="eqsl.password_label">Password</label><input id="eqsl_pass" type="password"></div>
+      <p class="settings-help" data-i18n="eqsl.creds_help">
+        Se guardan solo en tu PC (data/config.json), igual que
+        la API key de Gemini. eQSL no ofrece nada más seguro que
+        usuario/contraseña para esto.
+      </p>
+      <div class="modal-actions">
+        <button id="eqslStartBtn" onclick="startEqslImport()" data-i18n="eqsl.start_btn">Iniciar descarga</button>
+        <button id="eqslStopBtn" class="btn-danger" onclick="stopEqslImport()" style="display:none;" data-i18n="eqsl.stop_btn">■ Detener descarga</button>
+        <button class="btn-secondary" onclick="saveAndCloseEqsl()" data-i18n="eqsl.save_close_btn">💾 Guardar y cerrar</button>
+        <button class="btn-secondary" onclick="closeEqslModal()" data-i18n="eqsl.close_btn">Cerrar</button>
+      </div>
+      <div id="eqslProgress" class="ocr-status"></div>
+    </div>
+  </div>
+
+  <div id="cardModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="close-btn" id="closeModal">&times;</button>
+      <div class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
