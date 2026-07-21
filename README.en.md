@@ -1,4 +1,4 @@
-# QSL Manager
+# QSL Manager - IA based Organizer
 
 [![Download QSL Manager](https://img.shields.io/badge/⬇️_Download-QSLManager.exe-brightgreen?style=for-the-badge)](https://github.com/ti3wti/QSL-Manager/releases/latest/download/QSLManager.exe)
 
